@@ -1,18 +1,26 @@
 import React from 'react';
-import { render, cleanup } from '@testing-library/react';
+import { render, cleanup, waitFor } from '@testing-library/react';
 import Editor from './Editor';
 import * as monaco from 'monaco-editor';
 
 jest.mock('monaco-editor', () => {
-  const model = { dispose: jest.fn() };
+  const model = {
+    dispose: jest.fn(),
+    getValue: jest.fn().mockReturnValue(''),
+    setValue: jest.fn(),
+    uri: { toString: () => 'inmemory://model/1' },
+  };
   const editor = {
     dispose: jest.fn(),
     getModel: jest.fn().mockReturnValue(model),
     setModel: jest.fn(),
+    onDidChangeModelContent: jest.fn(),
   };
   return {
     editor: {
       create: jest.fn().mockReturnValue(editor),
+      setModelMarkers: jest.fn(),
+      MarkerSeverity: { Error: 1, Warning: 2, Info: 3 },
     },
     languages: {
       register: jest.fn(),
@@ -21,22 +29,47 @@ jest.mock('monaco-editor', () => {
   };
 });
 
+jest.mock('@/hooks/useCollaborativeEditor', () => ({
+  useCollaborativeEditor: () => ({ peers: [], isConnected: false }),
+}));
+
+jest.mock('@/lib/editorLoadScheduler', () => ({
+  scheduleEditorLoad: (cb: () => void) => {
+    cb();
+    return undefined;
+  },
+}));
+
+jest.mock('@/lib/monacoWorkers', () => ({
+  configureMonacoWorkers: jest.fn(),
+}));
+
+class MockWorker {
+  postMessage = jest.fn();
+  terminate = jest.fn();
+  onmessage: ((event: any) => void) | null = null;
+}
+
+(global as any).Worker = jest.fn().mockImplementation(() => new MockWorker());
+
 describe('Editor', () => {
   afterEach(() => {
     cleanup();
     jest.clearAllMocks();
   });
 
-  it('creates a Monaco editor on mount', () => {
-    render(<Editor value="const x = 1;" language="rust" />);
-    expect(monaco.editor.create).toHaveBeenCalledTimes(1);
+  it('creates a Monaco editor on mount', async () => {
+    render(<Editor code="const x = 1;" setCode={() => {}} />);
+    await waitFor(() => expect(monaco.editor.create).toHaveBeenCalledTimes(1));
   });
 
-  it('disposes the editor and model on unmount', () => {
-    const { unmount } = render(<Editor value="const x = 1;" language="rust" />);
+  it('disposes the editor and model on unmount', async () => {
+    const { unmount } = render(<Editor code="const x = 1;" setCode={() => {}} />);
+
+    await waitFor(() => expect(monaco.editor.create).toHaveBeenCalledTimes(1));
 
     const createMock = monaco.editor.create as jest.Mock;
-    const editorInstance = createMock.mock.results[0].value;
+    const editorInstance = createMock.mockResults[0].value;
 
     expect(editorInstance.getModel).toHaveBeenCalled();
     const modelInstance = editorInstance.getModel();
