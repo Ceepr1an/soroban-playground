@@ -15,7 +15,7 @@ ctx.onmessage = (event: MessageEvent) => {
   const { code, uri } = event.data;
   const diagnostics = analyzeRustCode(code);
   ctx.postMessage({ uri, diagnostics });
-});
+};
 
 function analyzeRustCode(code: string): RustMarker[] {
   const markers: RustMarker[] = [];
@@ -58,9 +58,7 @@ function analyzeRustCode(code: string): RustMarker[] {
 }
 
 function isMatchingPair(open: string, close: string): boolean {
-  return (
-    (open === "{" && close === "}") ||
+  return (open === "{" && close === "}") ||
     (open === "(" && close === ")") ||
-    (open === "[" && close === "]")
-  );
+    (open === "[" && close === "]");
 }
