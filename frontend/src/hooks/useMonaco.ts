@@ -1,11 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import type { RefObject } from "react";
-import * as monaco from "monaco-editor";
-import { scheduleEditorLoad } from "@/lib/editorLoadScheduler";
-import { configureMonacoWorkers from "@/lib/monacoWorkers";
+import type * as monaco from "monaco-editor";
+import { scheduleEditorLoad } from "../../lib/editorLoadScheduler";
+import { configureMonacoWorkers } from "../../lib/monacoWorkers";
 import "monaco-editor/min/vs/editor/editor.main.css";
-
-configureMonacoWorkers();
 
 interface UseMonacoProps {
   language: string;
@@ -23,19 +21,19 @@ export function useMonaco({
   value,
   onChange,
 }: UseMonacoProps): UseMonacoResult {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
-  const modelRef = useRef<monaco.editor.ITextModel | null>(null);
-  const workerRef = useRef<Worker | null>(null);
-  const onChangeRef = useRef(onChange);
-  const valueRef = useRef(value);
+  containerRef = useRef<HTMLDivElement | null>(null);
+  editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+  modelRef = useRef<monaco.editor.ITextModel | null>(null);
+  workerRef = useRef<Worker | null>(null);
+  onChangeRef = useRef(onChange);
+  valueRef = useRef(value);
   const [isEditorReady, setIsEditorReady] = useState(false);
 
-  useEffect(() {
+  useEffect(() => {
     onChangeRef.current = onChange;
   }, [onChange]);
 
-  useEffect(() {
+  useEffect(() => {
     valueRef.current = value;
     const model = modelRef.current;
     if (model && value !== model.getValue()) {
@@ -46,7 +44,7 @@ export function useMonaco({
   useEffect(() => {
     let disposed = false;
     let cancel: (() => void) | undefined;
-    let monacoAPI: typeof monaco | null = null;
+    let monacoAPI: typeof import("monaco-editor") | null = null;
 
     async function initEditor() {
       cancel = scheduleEditorLoad(async () => {
@@ -58,6 +56,10 @@ export function useMonaco({
 
         try {
           monacoAPI = await import("monaco-editor");
+          if (disposed) return;
+
+          configureMonacoWorkers();
+
           const editor = monacoAPI.editor.create(containerRef.current, {
             language,
             value: valueRef.current,
@@ -80,6 +82,8 @@ export function useMonaco({
 
           if (disposed) {
             editor.dispose();
+            const model = editor.getModel();
+            if (model) model.dispose();
             return;
           }
 
@@ -117,7 +121,7 @@ export function useMonaco({
             );
           };
 
-          editor.onDidChangeModelContent(() => {
+          editor.onDieChangeModelContent(() => {
             const currentValue = modelRef.current?.getValue();
             if (currentValue !== undefined) {
               onChangeRef.current(currentValue);
