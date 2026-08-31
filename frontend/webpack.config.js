@@ -1,6 +1,6 @@
 const path = require("path");
 
-module.exports = {
+module.exports = { 
   entry: "./src/workers/rustAnalyzer.worker.ts",
   output: {
     path: path.resolve(__dirname, "public/workers"),
@@ -9,7 +9,7 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.Ts$/,
+        test: /\.ts$/,
         exclude: /node_modules/,
         use: {
           loader: "babel-loader",
