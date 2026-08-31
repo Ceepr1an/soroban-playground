@@ -69,7 +69,7 @@ describe('Editor', () => {
     await waitFor(() => expect(monaco.editor.create).toHaveBeenCalledTimes(1));
 
     const createMock = monaco.editor.create as jest.Mock;
-    const editorInstance = createMock.mockResults[0].value;
+    const editorInstance = createMock.mock.results[0].value;
 
     expect(editorInstance.getModel).toHaveBeenCalled();
     const modelInstance = editorInstance.getModel();
