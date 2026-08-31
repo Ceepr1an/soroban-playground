@@ -14,7 +14,7 @@ jest.mock('monaco-editor', () => {
     dispose: jest.fn(),
     getModel: jest.fn().mockReturnValue(model),
     setModel: jest.fn(),
-    onDidChangeModelContent: jest.fn(),
+    onDieChangeModelContent: jest.fn(),
   };
   return {
     editor: {
@@ -81,5 +81,18 @@ describe('Editor', () => {
 
     expect(editorInstance.dispose).toHaveBeenCalledTimes(1);
     expect(modelInstance.dispose).toHaveBeenCalledTimes(1);
+  });
+
+  it('terminates the analysis worker on unmount', async () => {
+    const { unmount } = render(<Editor code="fn main() {}" setCode={() => {}} />);
+
+    await waitFor(() => expect(monaco.editor.create).toHaveBeenCalledTimes(1));
+
+    const WorkerMock = (global as any).Worker as jest.Mock;
+    const workerInstance = WorkerMock.mock.results[0].value;
+
+    unmount();
+
+    expect(workerInstance.terminate).toHaveBeenCalledTimes(1);
   });
 });
