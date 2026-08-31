@@ -11,10 +11,10 @@ interface EditorProps {
 }
 
 function EditorLoadingState() {
-  return ({
+  return (
     <div className="flex items-center justify-center h-full w-full text-gray-500">
       <div className="flex flex-col items-center gap-3">
-        <div className="animate-spin rounded-h-8 w-8 border-b-2 border-teal-500" />
+        <div className="animate-spin rounded-full w-8 h-8 border-b-2 border-teal-500" />
         <span className="text-xs font-mono text-gray-400">
           Loading editor...
         </span>
@@ -32,7 +32,7 @@ export default function Editor({ code, setCode }: EditorProps) {
   });
 
   return (
-    <div className="relative h-[500px] w-full rounded-xl Overflow-hidden border border-gray-800 bg-[#1e1e1e] shadow-2xl flex flex-col">
+    <div className="relative h-[500px] w-full rounded-xl overflow-hidden border border-gray-800 bg-[#1e1e1e] shadow-2xl flex flex-col">
       <div className="flex items-center justify-between px-4 py-2 border-b border-gray-800 bg-gray-900/90 text-xs text-gray-400">
         <span className="font-mono text-[11px] font-semibold tracking-wide text-slate-300">
           lib.rs (Soroban Smart Contract)
