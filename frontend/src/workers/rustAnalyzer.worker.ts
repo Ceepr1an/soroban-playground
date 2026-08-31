@@ -1,5 +1,4 @@
 /// <reference lib="webworker" />
-
 interface RustMarker {
   startLineNumber: number;
   startColumn: number;
