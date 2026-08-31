@@ -5,6 +5,8 @@ import { scheduleEditorLoad } from "@/lib/editorLoadScheduler";
 import { configureMonacoWorkers from "@/lib/monacoWorkers";
 import "monaco-editor/min/vs/editor/editor.main.css";
 
+configureMonacoWorkers();
+
 interface UseMonacoProps {
   language: string;
   value: string;
@@ -12,7 +14,7 @@ interface UseMonacoProps {
 }
 
 interface UseMonacoResult {
-  containerRef: RefObject<HTMLDivElement null>;
+  containerRef: RefObject<HTMLDivElement | null>;
   isEditorReady: boolean;
 }
 
@@ -21,7 +23,7 @@ export function useMonaco({
   value,
   onChange,
 }: UseMonacoProps): UseMonacoResult {
-  const containerRef = useRef<HTMLDivElement null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const modelRef = useRef<monaco.editor.ITextModel | null>(null);
   const workerRef = useRef<Worker | null>(null);
@@ -47,8 +49,6 @@ export function useMonaco({
     let monacoAPI: typeof monaco | null = null;
 
     async function initEditor() {
-      configureMonacoWorkers();
-
       cancel = scheduleEditorLoad(async () => {
         while (!containerRef.current) {
           if (disposed) return;
