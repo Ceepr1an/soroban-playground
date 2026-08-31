@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { RefObject } from "react";
 import * as monaco from "monaco-editor";
-import RustAnalyzerWorker from "../workers/rustAnalyzer.worker.ts?worker";
 import { scheduleEditorLoad } from "@/lib/editorLoadScheduler";
-import { configureMonacoWorkers } from "@/lib/monacoWorkers";
+import { configureMonacoWorkers from "@/lib/monacoWorkers";
 import "monaco-editor/min/vs/editor/editor.main.css";
 
 interface UseMonacoProps {
@@ -13,7 +12,7 @@ interface UseMonacoProps {
 }
 
 interface UseMonacoResult {
-  containerRef: RefObject<HTMLDivElement | null>;
+  containerRef: RefObject<HTMLDivElement null>;
   isEditorReady: boolean;
 }
 
@@ -22,19 +21,19 @@ export function useMonaco({
   value,
   onChange,
 }: UseMonacoProps): UseMonacoResult {
-  containerRef = useRef<HTMLDivElement | null>(null);
-  editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
-  modelRef = useRef<monaco.editor.ITextModel | null>(null);
-  workerRef = useRef<Worker | null>(null);
-  onChangeRef = useRef(onChange);
-  valueRef = useRef(value);
+  const containerRef = useRef<HTMLDivElement null>(null);
+  const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+  const modelRef = useRef<monaco.editor.ITextModel | null>(null);
+  const workerRef = useRef<Worker | null>(null);
+  const onChangeRef = useRef(onChange);
+  const valueRef = useRef(value);
   const [isEditorReady, setIsEditorReady] = useState(false);
 
-  useEffect(() => {
+  useEffect(() {
     onChangeRef.current = onChange;
   }, [onChange]);
 
-  useEffect(() => {
+  useEffect(() {
     valueRef.current = value;
     const model = modelRef.current;
     if (model && value !== model.getValue()) {
@@ -45,7 +44,6 @@ export function useMonaco({
   useEffect(() => {
     let disposed = false;
     let cancel: (() => void) | undefined;
-    let worker: Worker | null = null;
     let monacoAPI: typeof monaco | null = null;
 
     async function initEditor() {
@@ -67,7 +65,7 @@ export function useMonaco({
             minimap: { enabled: false },
             fontSize: 14,
             padding: { top: 16, bottom: 16 },
-            scrollBeyondListLine: false,
+            scrollBeyondLastLine: false,
             smoothScrolling: true,
             cursorBlinking: "smooth",
             cursorSmoothCaretAnimation: "on",
@@ -89,7 +87,7 @@ export function useMonaco({
           modelRef.current = editor.getModel() ?? null;
           setIsEditorReady(true);
 
-          worker = new RustAnalyzerWorker();
+          const worker = new Worker(new URL("../workers/rustAnalyzer.worker.ts", import.meta.url));
           workerRef.current = worker;
 
           worker.onmessage = (event: MessageEvent) => {
@@ -123,7 +121,7 @@ export function useMonaco({
             const currentValue = modelRef.current?.getValue();
             if (currentValue !== undefined) {
               onChangeRef.current(currentValue);
-              worker?.postMessage({
+              workerRef.current?.postMessage({
                 uri: modelRef.current?.uri.toString(),
                 code: currentValue,
               });
@@ -131,7 +129,7 @@ export function useMonaco({
           });
 
           if (modelRef.current) {
-            worker.postMessage({
+            workerRef.current.postMessage({
               uri: modelRef.current.uri.toString(),
               code: modelRef.current.getValue(),
             });
@@ -147,8 +145,8 @@ export function useMonaco({
     return () => {
       disposed = true;
       if (cancel) cancel();
-      if (worker) {
-        worker.terminate();
+      if (workerRef.current) {
+        workerRef.current.terminate();
         workerRef.current = null;
       }
       if (editorRef.current) {
